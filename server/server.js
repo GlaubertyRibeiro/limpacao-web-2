@@ -11,27 +11,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-// CORS: permitir chamadas do frontend e responder preflight
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  'https://limpacao-web-2.vercel.app',
-  'https://limpacao-web-2-swpv.vercel.app',
-  'https://limpacao-web-2-swpy.vercel.app'
-].filter(Boolean);
-
-app.use(cors({
-  origin: (origin, callback) => {
-    // requests from tools like curl or server-side (no origin) should be allowed
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('Not allowed by CORS'));
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-}));
-
-// handle preflight for all routes
+// CORS: temporariamente permitir todas origens para habilitar pré-flight e depuração
+// Nota: depois de confirmado o funcionamento, restrinja para os domínios do frontend.
+app.use(cors());
 app.options('*', cors());
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
