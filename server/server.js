@@ -343,6 +343,14 @@ app.post('/api/relatorios/:id/chat', async (req, res) => {
   }
 });
 
+// Serve front-end build (static files) when available
+const staticPath = path.resolve(__dirname, 'public');
+app.use(express.static(staticPath));
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(staticPath, 'index.html'));
+});
+
 const ensureSchema = async () => {
   const schemaPath = path.resolve(__dirname, 'mysql-schema.sql');
   const schemaSql = await fs.readFile(schemaPath, 'utf-8');
