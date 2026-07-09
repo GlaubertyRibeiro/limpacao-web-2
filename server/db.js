@@ -41,41 +41,42 @@ const parseConnectionConfig = () => {
   };
 };
 
-let config = parseConnectionConfig();
-
-const pool = mysql.createPool({
-  host: config.host,
-  port: config.port,
-  user: config.user,
-  password: config.password,
-  database: config.database,
+const createPool = (currentConfig) => mysql.createPool({
+  host: currentConfig.host,
+  port: currentConfig.port,
+  user: currentConfig.user,
+  password: currentConfig.password,
+  database: currentConfig.database,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
   multipleStatements: true,
   enableKeepAlive: true,
-    connectTimeout: 10000,
+  connectTimeout: 10000,
 });
 
-console.log(`\n🔗 Conectando ao MySQL (${config.source})...`);
-console.log(`   Host: ${config.host}`);
-console.log(`   Port: ${config.port}`);
-console.log(`   User: ${config.user}`);
-console.log(`   Database: ${config.database}\n`);
+let config = parseConnectionConfig();
+let pool = createPool(config);
 
-// Testar conexão ao iniciar
-pool.getConnection()
-  .then((connection) => {
-    console.log('✅ Conexão com MySQL estabelecida com sucesso!\n');
+const showConnectionInfo = (currentConfig) => {
+  console.log(`\n🔗 Conectando ao MySQL (${currentConfig.source})...`);
+  console.log(`   Host: ${currentConfig.host}`);
+  console.log(`   Port: ${currentConfig.port}`);
+  console.log(`   User: ${currentConfig.user}`);
+  console.log(`   Database: ${currentConfig.database}\n`);
+};
+
+const testConnection = async () => {
+  showConnectionInfo(config);
+  try {
+    const connection = await pool.getConnection();
     connection.release();
-  })
-  .catch((error) => {
+    console.log('✅ Conexão com MySQL estabelecida com sucesso!\n');
+  } catch (error) {
     console.error('❌ Erro ao conectar ao MySQL:', error.message);
-    
-    // Se falhou Railway, tenta reconectar com local
+
     if (config.source === '☁️ RAILWAY') {
-      console.log('\n⚠️  Falha no Railway, tentando reconectar com variáveis locais...\n');
-      config = {
+      const fallbackConfig = {
         host: process.env.DB_HOST || 'localhost',
         port: Number(process.env.DB_PORT || 3306),
         user: process.env.DB_USER || 'root',
@@ -83,13 +84,27 @@ pool.getConnection()
         database: process.env.DB_NAME || 'limpacao',
         source: '💻 LOCAL (fallback)',
       };
-      
-      console.log(`🔗 Reconectando (${config.source})...`);
-      console.log(`   Host: ${config.host}`);
-      console.log(`   Port: ${config.port}`);
-      console.log(`   User: ${config.user}`);
-      console.log(`   Database: ${config.database}\n`);
+
+      console.log('\n⚠️  Falha no Railway, tentando reconectar com variáveis locais...\n');
+      showConnectionInfo(fallbackConfig);
+
+      config = fallbackConfig;
+      pool = createPool(config);
+
+      try {
+        const connection = await pool.getConnection();
+        connection.release();
+        console.log('✅ Conexão local com MySQL estabelecida com sucesso!\n');
+      } catch (fallbackError) {
+        console.error('❌ Erro ao conectar ao MySQL local de fallback:', fallbackError.message);
+        process.exit(1);
+      }
+    } else {
+      process.exit(1);
     }
-  });
+  }
+};
+
+testConnection();
 
 export default pool;

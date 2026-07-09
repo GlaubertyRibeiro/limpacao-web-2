@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Input, Heading } from '../atoms';
 import { Logo } from '../molecules';
+import { API } from '../api';
 
 export function LoginPage({ onLogin }) {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -40,7 +41,6 @@ export function LoginPage({ onLogin }) {
     }
 
     setLoading(true);
-    const API = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
     try {
       if (isRegistering) {

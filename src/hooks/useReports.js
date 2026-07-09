@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
+import { API } from '../api';
 
 export function useReports(currentUser = null) {
-  const API = import.meta.env.VITE_API_URL || 'http://localhost:3001';
   const [reports, setReports] = useState([]);
   const currentUserId = currentUser?.id ?? currentUser?.userId ?? null;
   const currentUserName = currentUser?.name ?? currentUser?.nome ?? null;
